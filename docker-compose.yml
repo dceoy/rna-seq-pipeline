@@ -1,0 +1,31 @@
+---
+version: '3'
+
+services:
+  rna-seq-pipeline:
+    container_name: rna-seq-pipeline
+    build:
+      context: build
+      args:
+        http_proxy: ${http_proxy}
+    image: dceoy/rna-seq-pipeline:latest
+    user: ${UID}:${GID}
+    userns_mode: host
+    environment:
+      http_proxy: ${http_proxy}
+      https_proxy: ${https_proxy}
+      HTTP_PROXY: ${HTTP_PROXY}
+      HTTPS_PROXY: ${HTTPS_PROXY}
+    volumes:
+      - ./bin:/opt/bin
+      - ./ref:/ref:ro
+      - ./input:/in:ro
+      - ./output:/out
+    working_dir: /wd
+    entrypoint:
+      - /opt/bin/workflow.sh
+    command:
+      - --ref-gff=/ref/GCF_000001405.38_GRCh38.p12_genomic.gff.gz
+      - --ref-fna=/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
+      - --in-dir=/in
+      - --out-dir=/out
