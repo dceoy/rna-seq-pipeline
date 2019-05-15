@@ -15,7 +15,7 @@ OUT_QC_DIR="${2}"
 THREAD="${3}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 
-mkdir "${OUT_QC_DIR}"
+[[ -d "${OUT_QC_DIR}" ]] || mkdir "${OUT_QC_DIR}"
 
 fastqc \
   --nogroup \

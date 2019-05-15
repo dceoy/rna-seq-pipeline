@@ -3,12 +3,12 @@
 # RNA-seq analytical pipeline with PRINSEQ, STAR, and RSEM
 #
 # Usage:
-#   workflow.sh --ref-gff=<path> --ref-fna=<path> [--in-dir=<path>]
+#   workflow.sh --ref-gtf=<path> --ref-fna=<path> [--in-dir=<path>]
 #               [--out-dir=<path>] [--qc] [--only-ref-prep] [--thread=<int>]
 #   workflow.sh -h|--help
 #
 # Options:
-#   --ref-gff=<path>  Path to a reference GFF file
+#   --ref-gtf=<path>  Path to a reference GTF file
 #   --ref-fna=<path>  Path to a reference FASTA file
 #   --in-dir=<path>   Path to input FASTQ directory [default: .]
 #   --out-dir=<path>  Path to output directory [default: .]
@@ -34,7 +34,7 @@ FASTQC_SH="${BIN_DIR}/fastqc.sh"
 RSEM_REF_SH="${BIN_DIR}/rsem_ref.sh"
 RSEM_TPM_SH="${BIN_DIR}/rsem_tpm.sh"
 
-REF_GFF=''
+REF_GTF=''
 REF_FNA=''
 IN_DIR="${PWD}"
 OUT_DIR="${PWD}"
@@ -74,11 +74,11 @@ while [[ ${#} -ge 1 ]]; do
     '--debug' )
       shift 1
       ;;
-    '--ref-gff' )
-      REF_GFF=$(realpath "${2}") && shift 2
+    '--ref-gtf' )
+      REF_GTF=$(realpath "${2}") && shift 2
       ;;
-    --ref-gff=* )
-      REF_GFF=$(realpath "${1#*\=}") && shift 1
+    --ref-gtf=* )
+      REF_GTF=$(realpath "${1#*\=}") && shift 1
       ;;
     '--ref-fna' )
       REF_FNA=$(realpath "${2}") && shift 2
@@ -119,7 +119,7 @@ while [[ ${#} -ge 1 ]]; do
   esac
 done
 
-[[ -z "${REF_GFF}" ]] && abort 'missing argument: --ref-gff'
+[[ -z "${REF_GTF}" ]] && abort 'missing argument: --ref-gtf'
 [[ -z "${REF_FNA}" ]] && abort 'missing argument: --ref-fna'
 
 case "${OSTYPE}" in
@@ -138,13 +138,14 @@ OUT_FQ_DIR="${OUT_DIR}/fq"
 OUT_REF_DIR="${OUT_DIR}/ref"
 OUT_MAP_DIR="${OUT_DIR}/map"
 
-OUT_REF_PREFIX="${OUT_REF_DIR}/human_refseq"
+REF_TAG=$(basename "${REF_FNA}" | sed -e 's/\.[a-z]\+\.gz$//')
+OUT_REF_PREFIX="${OUT_REF_DIR}/${REF_TAG}"
 if [[ -d "${OUT_REF_DIR}" ]]; then
   echo ">>> STAR references exist: ${OUT_REF_PREFIX}"
 else
   echo ">>> Prepare references using STAR and RSEM: ${OUT_REF_PREFIX}"
   ${RSEM_REF_SH} \
-    "${REF_GFF}" "${REF_FNA}" "${OUT_REF_PREFIX}" "${THREAD}"
+    "${REF_GTF}" "${REF_FNA}" "${OUT_REF_PREFIX}" "${THREAD}"
 fi
 [[ ${ONLY_REF_PREP} -eq 0 ]] || exit
 

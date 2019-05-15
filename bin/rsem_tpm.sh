@@ -18,7 +18,7 @@ THREAD="${4}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 OUT_MAP_PREFIX="${OUT_MAP_DIR}/${FQ_NAME}"
 
-mkdir "${OUT_MAP_DIR}"
+[[ -d "${OUT_MAP_DIR}" ]] || mkdir "${OUT_MAP_DIR}"
 
 rsem-calculate-expression \
   --star \

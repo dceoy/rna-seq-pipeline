@@ -25,7 +25,7 @@ services:
       - /opt/bin/workflow.sh
     command:
       - --qc
-      - --ref-gff=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.gff.gz
+      - --ref-gtf=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.gtf.gz
       - --ref-fna=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
       - --in-dir=/wd/in
       - --out-dir=/out

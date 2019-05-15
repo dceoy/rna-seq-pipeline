@@ -15,7 +15,7 @@ OUT_FQ_DIR="${2}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 OUT_FQ_PREFIX="${OUT_FQ_DIR}/${FQ_NAME}"
 
-mkdir "${OUT_FQ_DIR}"
+[[ -d "${OUT_FQ_DIR}" ]] || mkdir "${OUT_FQ_DIR}"
 
 prinseq-lite.pl \
   -trim_tail_right 5 \
@@ -27,4 +27,4 @@ prinseq-lite.pl \
   -out_good "${OUT_FQ_PREFIX}.prinseq_good" \
   -out_bad "${OUT_FQ_PREFIX}.prinseq_bad"
 
-gzip "${OUT_FQ_PREFIX}.prinseq_*.fastq"
+gzip "${OUT_FQ_PREFIX}".prinseq_*.fastq
