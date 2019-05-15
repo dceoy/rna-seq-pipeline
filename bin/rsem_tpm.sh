@@ -19,9 +19,15 @@ FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 OUT_MAP_PREFIX="${OUT_MAP_DIR}/${FQ_NAME}"
 LOG_DIR="${OUT_MAP_DIR}/../log"
 LOG_TXT="${LOG_DIR}/rsem.calc.${FQ_NAME}.log.txt"
+FQ1_GZ="${IN_FQ_PREFIX}.R1.fastq.gz"
+FQ2_GZ="${IN_FQ_PREFIX}.R2.fastq.gz"
 
-[[ -d "${OUT_MAP_DIR}" ]] || mkdir "${OUT_MAP_DIR}"
-[[ -d "${LOG_DIR}" ]] || mkdir "${LOG_DIR}"
+[[ -f "${FQ1_GZ}" ]]
+[[ -f "${FQ2_GZ}" ]]
+
+for p in ${OUT_MAP_DIR} ${LOG_DIR}; do
+  [[ -d "${p}" ]] || mkdir "${p}"
+done
 
 rsem-calculate-expression \
   --star \
@@ -30,8 +36,8 @@ rsem-calculate-expression \
   --estimate-rspd \
   --calc-ci \
   --paired-end \
-  "${IN_FQ_PREFIX}_R1.fastq.gz" \
-  "${IN_FQ_PREFIX}_R2.fastq.gz" \
+  "${FQ1_GZ}" \
+  "${FQ2_GZ}" \
   "${OUT_REF_PREFIX}" \
   "${OUT_MAP_PREFIX}" \
   2>&1 | tee "${LOG_TXT}"

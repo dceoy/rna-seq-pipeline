@@ -16,14 +16,20 @@ THREAD="${3}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 LOG_DIR="${OUT_QC_DIR}/../log"
 LOG_TXT="${LOG_DIR}/fastqc.${FQ_NAME}.log.txt"
+FQ1_GZ="${IN_FQ_PREFIX}.R1.fastq.gz"
+FQ2_GZ="${IN_FQ_PREFIX}.R2.fastq.gz"
 
-[[ -d "${OUT_QC_DIR}" ]] || mkdir "${OUT_QC_DIR}"
-[[ -d "${LOG_DIR}" ]] || mkdir "${LOG_DIR}"
+[[ -f "${FQ1_GZ}" ]]
+[[ -f "${FQ2_GZ}" ]]
+
+for p in ${OUT_QC_DIR} ${LOG_DIR}; do
+  [[ -d "${p}" ]] || mkdir "${p}"
+done
 
 fastqc \
   --nogroup \
   --threads "${THREAD}" \
-  --outdir "${OUT_QC_DIR}/${FQ_NAME}" \
-  "${IN_FQ_PREFIX}_R1.fastq.gz" \
-  "${IN_FQ_PREFIX}_R2.fastq.gz" \
+  --outdir "${OUT_QC_DIR}" \
+  "${FQ1_GZ}" \
+  "${FQ2_GZ}" \
   2>&1 | tee "${LOG_TXT}"
