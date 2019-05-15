@@ -19,7 +19,7 @@ services:
     volumes:
       - .:/wd:ro
       - ./bin:/opt/bin
-      - ./output:/out
+      - ./output:/output
     working_dir: /wd
     entrypoint:
       - /opt/bin/workflow.sh
@@ -27,5 +27,5 @@ services:
       - --qc
       - --ref-gtf=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.gtf.gz
       - --ref-fna=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
-      - --in-dir=/wd/in
-      - --out-dir=/out
+      - --in-dir=/wd/input/fq
+      - --out-dir=/output
