@@ -15,7 +15,6 @@ OUT_QC_DIR="${2}"
 THREAD="${3}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 LOG_DIR="${OUT_QC_DIR}/../log"
-LOG_TXT="${LOG_DIR}/fastqc.${FQ_NAME}.log.txt"
 FQ1_GZ="${IN_FQ_PREFIX}.R1.fastq.gz"
 FQ2_GZ="${IN_FQ_PREFIX}.R2.fastq.gz"
 
@@ -32,4 +31,4 @@ fastqc \
   --outdir "${OUT_QC_DIR}" \
   "${FQ1_GZ}" \
   "${FQ2_GZ}" \
-  2>&1 | tee "${LOG_TXT}"
+  2>&1 | tee "${LOG_DIR}/fastqc.${FQ_NAME}.log.txt"

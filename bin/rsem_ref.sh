@@ -16,12 +16,11 @@ IN_REF_FNA="${2}"
 OUT_REF_PREFIX="${3}"
 THREAD="${4}"
 OUT_REF_DIR=$(dirname "${OUT_REF_PREFIX}")
-OUT_REF_FNA="${OUT_REF_PREFIX}.fna"
-OUT_REF_PA_FNA="${OUT_REF_PREFIX}.primary_assembly.fna"
-OUT_REF_GTF="${OUT_REF_PREFIX}.gtf"
-REF_NAME=$(basename "${OUT_REF_PREFIX}")
+REF_TAG=$(basename "${IN_REF_FNA}" | sed -e 's/\.[a-z]\+\.gz$//')
+OUT_REF_FNA="${OUT_REF_DIR}/${REF_TAG}.fna"
+OUT_REF_PA_FNA="${OUT_REF_DIR}/${REF_TAG}.primary_assembly.fna"
+OUT_REF_GTF="${OUT_REF_DIR}/${REF_TAG}.gtf"
 LOG_DIR="${OUT_REF_DIR}/../log"
-LOG_TXT="${LOG_DIR}/rsem.ref.${REF_NAME}.log.txt"
 
 [[ -f "${IN_REF_GTF}" ]]
 [[ -f "${IN_REF_FNA}" ]]
@@ -38,7 +37,7 @@ done
 rsem-refseq-extract-primary-assembly \
   "${OUT_REF_FNA}" \
   "${OUT_REF_PA_FNA}" \
-  2>&1 | tee "${LOG_TXT}"
+  2>&1 | tee "${LOG_DIR}/rsem.star.fna.${REF_TAG}.log.txt"
 
 rsem-prepare-reference \
   --star \
@@ -46,4 +45,7 @@ rsem-prepare-reference \
   --gtf "${OUT_REF_GTF}" \
   "${OUT_REF_PA_FNA}" \
   "${OUT_REF_PREFIX}" \
-  2>&1 | tee -a "${LOG_TXT}"
+  2>&1 | tee "${LOG_DIR}/rsem.star.ref.${REF_TAG}.log.txt"
+
+gzip "${OUT_REF_PA_FNA}"
+rm -f "${OUT_REF_GTF}" "${OUT_REF_FNA}"

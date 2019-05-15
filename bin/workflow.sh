@@ -138,40 +138,42 @@ OUT_FQ_DIR="${OUT_DIR}/fq"
 OUT_REF_DIR="${OUT_DIR}/ref"
 OUT_MAP_DIR="${OUT_DIR}/map"
 
+# Reference preparation
 REF_TAG=$(basename "${REF_FNA}" | sed -e 's/\.[a-z]\+\.gz$//')
-OUT_REF_PREFIX="${OUT_REF_DIR}/${REF_TAG}"
+OUT_REF_PREFIX="${OUT_REF_DIR}/rsem.star.${REF_TAG}"
 if [[ -d "${OUT_REF_DIR}" ]]; then
   echo ">>> STAR references exist: ${OUT_REF_PREFIX}"
 else
-  echo ">>> Prepare references using STAR and RSEM: ${OUT_REF_PREFIX}"
+  echo ">>> Prepare references with RSEM/STAR: ${OUT_REF_PREFIX}"
   ${RSEM_REF_SH} \
     "${REF_GTF}" "${REF_FNA}" "${OUT_REF_PREFIX}" "${THREAD}"
 fi
 [[ ${ONLY_REF_PREP} -eq 0 ]] || exit
 
+# Seaching of input samples
 FQ_PREFIXES=$(find_fq_prefixes "${IN_DIR}")
-echo ">>> Input FASTQ samples:"
+[[ -z "${FQ_PREFIXES}" ]] && abort "FASTQ not found: ${IN_DIR}"
+echo ">>> Search for input samples:"
 echo "${FQ_PREFIXES}"
 
+# ReadQC checks
 if [[ ${QC} -ne 0 ]]; then
-  echo ">>> Execute QC checks using FastQC: ${IN_DIR} => ${OUT_QC_DIR}"
+  echo ">>> Execute QC checks with FastQC: ${IN_DIR} => ${OUT_QC_DIR}"
   for p in ${FQ_PREFIXES}; do
     ${FASTQC_SH} "${p}" "${OUT_QC_DIR}" "${THREAD}"
   done
 fi
 
-if [[ -z "${FQ_PREFIXES}" ]]; then
-  abort "FASTQ not found: ${IN_DIR}"
-else
-  echo ">>> Trim reads using PRINSEQ: ${IN_DIR} => ${OUT_FQ_DIR}"
-  echo "${FQ_PREFIXES}" \
-    | xargs -L 1 -P "${THREAD}" -t -i "${PRINSEQ_SH}" {} "${OUT_FQ_DIR}"
-fi
+# Read trimming and filtering
+echo ">>> Trim reads with PRINSEQ: ${IN_DIR} => ${OUT_FQ_DIR}"
+echo "${FQ_PREFIXES}" \
+  | xargs -L 1 -P "${THREAD}" -t -i "${PRINSEQ_SH}" {} "${OUT_FQ_DIR}"
 
+# Read mapping and TPM calculation
 for p in ${FQ_PREFIXES}; do
   fq_name=$(basename "${p}")
   good_fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
-  echo ">>> Calculate TPMs using STAR and RSEM: ${good_fq_prefix} => ${OUT_MAP_DIR}"
+  echo ">>> Calculate TPMs with RSEM/STAR: ${good_fq_prefix} => ${OUT_MAP_DIR}"
   ${RSEM_TPM_SH} \
     "${good_fq_prefix}" "${OUT_REF_PREFIX}" "${OUT_MAP_DIR}" "${THREAD}"
 done

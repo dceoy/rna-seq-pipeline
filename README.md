@@ -1,7 +1,7 @@
 rna-seq-pipeline
 ================
 
-RNA-seq analytical pipeline with RSEM, STAR, PRINSEQ, and FASTQ
+RNA-seq analytical pipeline with RSEM, STAR, PRINSEQ, and FastQC
 
 Dependencies:
 

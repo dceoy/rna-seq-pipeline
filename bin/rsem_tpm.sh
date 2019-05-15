@@ -18,7 +18,6 @@ THREAD="${4}"
 FQ_NAME=$(basename "${IN_FQ_PREFIX}")
 OUT_MAP_PREFIX="${OUT_MAP_DIR}/${FQ_NAME}"
 LOG_DIR="${OUT_MAP_DIR}/../log"
-LOG_TXT="${LOG_DIR}/rsem.calc.${FQ_NAME}.log.txt"
 FQ1_GZ="${IN_FQ_PREFIX}.R1.fastq.gz"
 FQ2_GZ="${IN_FQ_PREFIX}.R2.fastq.gz"
 
@@ -40,4 +39,4 @@ rsem-calculate-expression \
   "${FQ2_GZ}" \
   "${OUT_REF_PREFIX}" \
   "${OUT_MAP_PREFIX}" \
-  2>&1 | tee "${LOG_TXT}"
+  2>&1 | tee "${LOG_DIR}/rsem.star.map.${FQ_NAME}.log.txt"
