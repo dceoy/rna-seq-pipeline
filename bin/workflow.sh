@@ -122,26 +122,23 @@ done
 [[ -z "${REF_GFF}" ]] && abort 'missing argument: --ref-gff'
 [[ -z "${REF_FNA}" ]] && abort 'missing argument: --ref-fna'
 
-if [[ -z "${THREAD}" ]]; then
-  case "${OSTYPE}" in
-    darwin* )
-      THREAD=$(sysctl -n hw.ncpu)
-      ;;
-    linux* )
-      THREAD=$(grep -ce '^processor\s\+:' /proc/cpuinfo)
-      ;;
-    * )
-      THREAD=1
-      ;;
-  esac
-fi
+case "${OSTYPE}" in
+  darwin* )
+    THREAD=$(sysctl -n hw.ncpu)
+    ;;
+  linux* )
+    THREAD=$(grep -ce '^processor\s\+:' /proc/cpuinfo)
+    ;;
+  * )
+    :
+    ;;
+esac
 OUT_QC_DIR="${OUT_DIR}/qc"
 OUT_FQ_DIR="${OUT_DIR}/fq"
 OUT_REF_DIR="${OUT_DIR}/ref"
 OUT_MAP_DIR="${OUT_DIR}/map"
 
-FNA_NAME=$(basename "${REF_FNA}" | sed -e 's/\.[a-z]\+\.gz$//')
-OUT_REF_PREFIX="${OUT_REF_DIR}/${FNA_NAME}"
+OUT_REF_PREFIX="${OUT_REF_DIR}/human_refseq"
 if [[ -d "${OUT_REF_DIR}" ]]; then
   echo ">>> STAR references exist: ${OUT_REF_PREFIX}"
 else
