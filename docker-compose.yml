@@ -17,15 +17,15 @@ services:
       HTTP_PROXY: ${HTTP_PROXY}
       HTTPS_PROXY: ${HTTPS_PROXY}
     volumes:
+      - .:/wd:ro
       - ./bin:/opt/bin
-      - ./ref:/ref:ro
-      - ./input:/in:ro
       - ./output:/out
     working_dir: /wd
     entrypoint:
       - /opt/bin/workflow.sh
     command:
-      - --ref-gff=/ref/GCF_000001405.38_GRCh38.p12_genomic.gff.gz
-      - --ref-fna=/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
-      - --in-dir=/in
+      - --qc
+      - --ref-gff=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.gff.gz
+      - --ref-fna=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
+      - --in-dir=/wd/in
       - --out-dir=/out
