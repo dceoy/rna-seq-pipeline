@@ -19,18 +19,26 @@ OUT_REF_DIR=$(dirname "${OUT_REF_PREFIX}")
 OUT_REF_FNA="${OUT_REF_PREFIX}.fna"
 OUT_REF_PA_FNA="${OUT_REF_PREFIX}.primary_assembly.fna"
 OUT_REF_GTF="${OUT_REF_PREFIX}.gtf"
+REF_NAME=$(basename "${OUT_REF_PREFIX}")
+LOG_DIR="${OUT_REF_DIR}/../log"
+LOG_TXT="${OUT_REF_DIR}/rsem.ref.${REF_NAME}.log.txt"
 
 [[ -d "${OUT_REF_DIR}" ]] || mkdir "${OUT_REF_DIR}"
+[[ -d "${LOG_DIR}" ]] || mkdir "${LOG_DIR}"
+
 [[ -f "${OUT_REF_GTF}" ]] \
   || pigz -p "${THREAD}" -dc "${GTF}" > "${OUT_REF_GTF}"
 [[ -f "${OUT_REF_FNA}" ]] \
   || pigz -p "${THREAD}" -dc "${FNA}" > "${OUT_REF_FNA}"
+
 [[ -f "${OUT_REF_FNA}" ]] \
-  || rsem-refseq-extract-primary-assembly "${OUT_REF_FNA}" "${OUT_REF_PA_FNA}"
+  || rsem-refseq-extract-primary-assembly "${OUT_REF_FNA}" "${OUT_REF_PA_FNA}" \
+    2>&1 | tee "${LOG_TXT}"
 
 rsem-prepare-reference \
   --star \
   --num-threads "${THREAD}" \
   --gtf "${OUT_REF_GTF}" \
   "${OUT_REF_PA_FNA}" \
-  "${OUT_REF_PREFIX}"
+  "${OUT_REF_PREFIX}" \
+  2>&1 | tee -a "${LOG_TXT}"

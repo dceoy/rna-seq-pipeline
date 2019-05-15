@@ -10,7 +10,7 @@ RUN set -e \
       && apt-get -y update \
       && apt-get -y dist-upgrade \
       && apt-get -y install --no-install-recommends --no-install-suggests \
-        ca-certificates curl openjdk-8-jre perl perl-doc pigz python \
+        ca-certificates curl libgomp1 openjdk-8-jre perl perl-doc pigz python \
       && apt-get -y autoremove \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
