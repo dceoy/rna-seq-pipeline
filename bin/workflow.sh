@@ -6,6 +6,7 @@
 #   workflow.sh --ref-gtf=<path> --ref-fna=<path> [--in-dir=<path>]
 #               [--out-dir=<path>] [--qc] [--only-ref-prep] [--thread=<int>]
 #   workflow.sh -h|--help
+#   workflow.sh --version
 #
 # Options:
 #   --ref-gtf=<path>  Path to a reference GTF file
@@ -16,6 +17,7 @@
 #   --only-ref-prep   Prepare only references
 #   --thread=<url>    Limit CPUs for multiprocessing
 #   -h, --help        Print usage
+#   --version         Print version
 
 set -ue
 
@@ -27,7 +29,7 @@ if [[ ${#} -ge 1 ]]; then
 fi
 
 SCRIPT_NAME=$(basename "${SCRIPT_PATH}")
-SCRIPT_VERSION='v0.0.1'
+SCRIPT_VERSION='v0.1.0'
 BIN_DIR=$(dirname "${SCRIPT_PATH}")
 LOGGER_SH="${BIN_DIR}/logger.sh"
 FASTQC_SH="${BIN_DIR}/fastqc.sh"
@@ -110,6 +112,9 @@ while [[ ${#} -ge 1 ]]; do
       ;;
     --thread=* )
       THREAD="${1#*\=}" && shift 1
+      ;;
+    '--version' )
+      print_version && exit 0
       ;;
     '-h' | '--help' )
       print_usage && exit 0
