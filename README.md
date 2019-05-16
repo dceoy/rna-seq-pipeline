@@ -17,14 +17,15 @@ Pull the image from [Docker Hub](https://hub.docker.com/r/dceoy/rna-seq-pipeline
 $ docker image pull dceoy/rna-seq-pipeline
 ```
 
-Pipeline scripts
-----------------
+Pipeline components
+-------------------
 
 - Command-line interface: `bin/workflow.sh`
-  - Read QC checks: `bin/fastqc.sh`
-  - Read Trimming and filtering: `bin/prinseq.sh`
-  - Reference preparation:`bin/rsem_ref.sh`
-  - Mapping and TPM calculation: `bin/rsem_tpm.sh`
+- Text logger of STDOUT/STDERR: `bin/logger.sh`
+- Read QC checks: `bin/fastqc.sh`
+- Read Trimming and filtering: `bin/prinseq.sh`
+- Mapping reference preparation:`bin/rsem_ref.sh`
+- Read mapping and TPM calculation: `bin/rsem_tpm.sh`
 
 Usage
 -----

@@ -29,13 +29,14 @@ fi
 SCRIPT_NAME=$(basename "${SCRIPT_PATH}")
 SCRIPT_VERSION='v0.0.1'
 BIN_DIR=$(dirname "${SCRIPT_PATH}")
-PRINSEQ_SH="${BIN_DIR}/prinseq.sh"
+LOGGER_SH="${BIN_DIR}/logger.sh"
 FASTQC_SH="${BIN_DIR}/fastqc.sh"
+PRINSEQ_SH="${BIN_DIR}/prinseq.sh"
 RSEM_REF_SH="${BIN_DIR}/rsem_ref.sh"
 RSEM_TPM_SH="${BIN_DIR}/rsem_tpm.sh"
 
-REF_GTF=''
-REF_FNA=''
+REF_GTF_GZ=''
+REF_FNA_GZ=''
 IN_DIR="${PWD}"
 OUT_DIR="${PWD}"
 QC=0
@@ -75,16 +76,16 @@ while [[ ${#} -ge 1 ]]; do
       shift 1
       ;;
     '--ref-gtf' )
-      REF_GTF=$(realpath "${2}") && shift 2
+      REF_GTF_GZ=$(realpath "${2}") && shift 2
       ;;
     --ref-gtf=* )
-      REF_GTF=$(realpath "${1#*\=}") && shift 1
+      REF_GTF_GZ=$(realpath "${1#*\=}") && shift 1
       ;;
     '--ref-fna' )
-      REF_FNA=$(realpath "${2}") && shift 2
+      REF_FNA_GZ=$(realpath "${2}") && shift 2
       ;;
     --ref-fna=* )
-      REF_FNA=$(realpath "${1#*\=}") && shift 1
+      REF_FNA_GZ=$(realpath "${1#*\=}") && shift 1
       ;;
     '--in-dir' )
       IN_DIR=$(realpath "${2}") && shift 2
@@ -119,8 +120,8 @@ while [[ ${#} -ge 1 ]]; do
   esac
 done
 
-[[ -z "${REF_GTF}" ]] && abort 'missing argument: --ref-gtf'
-[[ -z "${REF_FNA}" ]] && abort 'missing argument: --ref-fna'
+[[ -z "${REF_GTF_GZ}" ]] && abort 'missing argument: --ref-gtf'
+[[ -z "${REF_FNA_GZ}" ]] && abort 'missing argument: --ref-fna'
 
 case "${OSTYPE}" in
   darwin* )
@@ -133,47 +134,73 @@ case "${OSTYPE}" in
     :
     ;;
 esac
+OUT_LOG_DIR="${OUT_DIR}/log"
 OUT_QC_DIR="${OUT_DIR}/qc"
 OUT_FQ_DIR="${OUT_DIR}/fq"
 OUT_REF_DIR="${OUT_DIR}/ref"
 OUT_MAP_DIR="${OUT_DIR}/map"
 
+
+[[ -d "${OUT_LOG_DIR}" ]] || mkdir "${OUT_LOG_DIR}"
+
+# FASTQ preprocecing
+if [[ ${ONLY_REF_PREP} -eq 0 ]]; then
+  # Seaching of input samples
+  FQ_PREFIXES=$(find_fq_prefixes "${IN_DIR}")
+  [[ -z "${FQ_PREFIXES}" ]] && abort "FASTQ not found: ${IN_DIR}"
+  echo ">>> Search for input samples:"
+  echo "${FQ_PREFIXES}"
+
+  # ReadQC checks
+  if [[ ${QC} -ne 0 ]]; then
+    [[ -d "${OUT_QC_DIR}" ]] || mkdir "${OUT_QC_DIR}"
+    echo ">>> Execute QC checks with FastQC: ${IN_DIR} => ${OUT_QC_DIR}"
+    for p in ${FQ_PREFIXES}; do
+      fq_name=$(basename "${p}")
+      ${LOGGER_SH} \
+        "${OUT_LOG_DIR}/fastqc.${fq_name}.log.txt" \
+        "${FASTQC_SH} ${p} ${OUT_QC_DIR} ${THREAD}"
+    done
+  fi
+
+  # Read trimming and filtering
+  [[ -d "${OUT_FQ_DIR}" ]] || mkdir "${OUT_FQ_DIR}"
+  echo ">>> Trim reads with PRINSEQ: ${IN_DIR} => ${OUT_FQ_DIR}"
+  TMP_QUEUE_PRINSEQ_SH="${OUT_FQ_DIR}/tmp.queue.prinseq.sh"
+  echo -n > "${TMP_QUEUE_PRINSEQ_SH}"
+  for p in ${FQ_PREFIXES}; do
+    fq_name=$(basename "${p}")
+    fq_log_txt="${OUT_LOG_DIR}/prinseq.${fq_name}.log.txt"
+    echo "${LOGGER_SH} ${fq_log_txt} ${PRINSEQ_SH} ${p} ${OUT_FQ_DIR}" \
+      >> "${TMP_QUEUE_PRINSEQ_SH}"
+  done
+  < "${TMP_QUEUE_PRINSEQ_SH}" xargs -L 1 -P "${THREAD}" -t bash
+  rm -f "${TMP_QUEUE_PRINSEQ_SH}"
+fi
+
+
 # Reference preparation
-REF_TAG=$(basename "${REF_FNA}" | sed -e 's/\.[a-z]\+\.gz$//')
+REF_TAG=$(basename "${REF_FNA_GZ}" | sed -e 's/\.[a-z]\+\.gz$//')
 OUT_REF_PREFIX="${OUT_REF_DIR}/rsem.star.${REF_TAG}"
 if [[ -d "${OUT_REF_DIR}" ]]; then
-  echo ">>> STAR references exist: ${OUT_REF_PREFIX}"
+  echo ">>> RSEM/STAR references exist: ${OUT_REF_PREFIX}"
 else
   echo ">>> Prepare references with RSEM/STAR: ${OUT_REF_PREFIX}"
-  ${RSEM_REF_SH} \
-    "${REF_GTF}" "${REF_FNA}" "${OUT_REF_PREFIX}" "${THREAD}"
+  mkdir "${OUT_REF_DIR}"
+  ${LOGGER_SH} \
+    "${OUT_LOG_DIR}/rsem.star.ref.${REF_TAG}.log.txt" \
+    "${RSEM_REF_SH} ${REF_GTF_GZ} ${REF_FNA_GZ} ${OUT_REF_PREFIX} ${THREAD}"
 fi
 [[ ${ONLY_REF_PREP} -eq 0 ]] || exit
 
-# Seaching of input samples
-FQ_PREFIXES=$(find_fq_prefixes "${IN_DIR}")
-[[ -z "${FQ_PREFIXES}" ]] && abort "FASTQ not found: ${IN_DIR}"
-echo ">>> Search for input samples:"
-echo "${FQ_PREFIXES}"
-
-# ReadQC checks
-if [[ ${QC} -ne 0 ]]; then
-  echo ">>> Execute QC checks with FastQC: ${IN_DIR} => ${OUT_QC_DIR}"
-  for p in ${FQ_PREFIXES}; do
-    ${FASTQC_SH} "${p}" "${OUT_QC_DIR}" "${THREAD}"
-  done
-fi
-
-# Read trimming and filtering
-echo ">>> Trim reads with PRINSEQ: ${IN_DIR} => ${OUT_FQ_DIR}"
-echo "${FQ_PREFIXES}" \
-  | xargs -L 1 -P "${THREAD}" -t -i "${PRINSEQ_SH}" {} "${OUT_FQ_DIR}"
 
 # Read mapping and TPM calculation
+[[ -d "${OUT_MAP_DIR}" ]] || mkdir "${OUT_MAP_DIR}"
+echo ">>> Mapping and TPM calculation with RSEM/STAR: ${OUT_FQ_DIR} => ${OUT_MAP_DIR}"
 for p in ${FQ_PREFIXES}; do
   fq_name=$(basename "${p}")
-  good_fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
-  echo ">>> Calculate TPMs with RSEM/STAR: ${good_fq_prefix} => ${OUT_MAP_DIR}"
-  ${RSEM_TPM_SH} \
-    "${good_fq_prefix}" "${OUT_REF_PREFIX}" "${OUT_MAP_DIR}" "${THREAD}"
+  fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
+  ${LOGGER_SH} \
+    "${OUT_LOG_DIR}/rsem.star.tpm.${fq_name}.log.txt" \
+    "${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} ${THREAD}"
 done
