@@ -29,8 +29,9 @@ if [[ ${#} -ge 1 ]]; then
 fi
 
 SCRIPT_NAME=$(basename "${SCRIPT_PATH}")
-SCRIPT_VERSION='v0.1.0'
+SCRIPT_VERSION='v0.1.1'
 BIN_DIR=$(dirname "${SCRIPT_PATH}")
+VERSION_SH="${BIN_DIR}/version.sh"
 LOGGER_SH="${BIN_DIR}/logger.sh"
 FASTQC_SH="${BIN_DIR}/fastqc.sh"
 PRINSEQ_SH="${BIN_DIR}/prinseq.sh"
@@ -147,6 +148,7 @@ OUT_MAP_DIR="${OUT_DIR}/map"
 
 
 [[ -d "${OUT_LOG_DIR}" ]] || mkdir "${OUT_LOG_DIR}"
+${VERSION_SH} "${OUT_LOG_DIR}/versions.log.txt"
 
 # FASTQ preprocecing
 if [[ ${ONLY_REF_PREP} -eq 0 ]]; then
