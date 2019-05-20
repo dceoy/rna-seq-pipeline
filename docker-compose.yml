@@ -29,3 +29,4 @@ services:
       - --ref-fna=/wd/ref/GCF_000001405.38_GRCh38.p12_genomic.fna.gz
       - --in-dir=/wd/input/fq
       - --out-dir=/output
+      - --seed=0

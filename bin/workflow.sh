@@ -16,7 +16,7 @@
 #   --qc              Execute QC checks
 #   --only-ref-prep   Prepare only references
 #   --thread=<int>    Limit CPUs for multiprocessing
-#   --seed=<int>      Set a random seed [default: 0]
+#   --seed=<int>      Set a random seed
 #   -h, --help        Print usage
 #   --version         Print version
 
@@ -30,7 +30,7 @@ if [[ ${#} -ge 1 ]]; then
 fi
 
 SCRIPT_NAME=$(basename "${SCRIPT_PATH}")
-SCRIPT_VERSION='v0.1.1'
+SCRIPT_VERSION='v0.1.2'
 BIN_DIR=$(dirname "${SCRIPT_PATH}")
 VERSION_SH="${BIN_DIR}/version.sh"
 LOGGER_SH="${BIN_DIR}/logger.sh"
@@ -45,7 +45,7 @@ IN_DIR="${PWD}"
 OUT_DIR="${PWD}"
 QC=0
 ONLY_REF_PREP=0
-SEED=0
+SEED=''
 THREAD=1
 
 function print_version {
@@ -158,6 +158,9 @@ OUT_MAP_DIR="${OUT_DIR}/map"
 [[ -d "${OUT_LOG_DIR}" ]] || mkdir "${OUT_LOG_DIR}"
 ${VERSION_SH} "${OUT_LOG_DIR}/versions.log.txt"
 
+TMP_QUEUE_SH="${OUT_DIR}/tmp_queue.sh"
+echo -n > "${TMP_QUEUE_SH}"
+
 # FASTQ preprocecing
 if [[ ${ONLY_REF_PREP} -eq 0 ]]; then
   # Seaching of input samples
@@ -172,25 +175,23 @@ if [[ ${ONLY_REF_PREP} -eq 0 ]]; then
     echo ">>> Execute QC checks with FastQC: ${IN_DIR} => ${OUT_QC_DIR}"
     for p in ${FQ_PREFIXES}; do
       fq_name=$(basename "${p}")
-      ${LOGGER_SH} \
-        "${OUT_LOG_DIR}/fastqc.${fq_name}.log.txt" \
-        "${FASTQC_SH} ${p} ${OUT_QC_DIR} ${THREAD}"
+      qc_log_txt="${OUT_LOG_DIR}/fastqc.${fq_name}.log.txt"
+      echo \
+        "${LOGGER_SH} ${qc_log_txt} ${FASTQC_SH} ${p} ${OUT_QC_DIR} 1" \
+        >> "${TMP_QUEUE_SH}"
     done
   fi
 
   # Read trimming and filtering
   [[ -d "${OUT_FQ_DIR}" ]] || mkdir "${OUT_FQ_DIR}"
   echo ">>> Trim reads with PRINSEQ: ${IN_DIR} => ${OUT_FQ_DIR}"
-  TMP_QUEUE_PRINSEQ_SH="${OUT_FQ_DIR}/tmp.queue.prinseq.sh"
-  echo -n > "${TMP_QUEUE_PRINSEQ_SH}"
   for p in ${FQ_PREFIXES}; do
     fq_name=$(basename "${p}")
     fq_log_txt="${OUT_LOG_DIR}/prinseq.${fq_name}.log.txt"
-    echo "${LOGGER_SH} ${fq_log_txt} ${PRINSEQ_SH} ${p} ${OUT_FQ_DIR}" \
-      >> "${TMP_QUEUE_PRINSEQ_SH}"
+    echo \
+      "${LOGGER_SH} ${fq_log_txt} ${PRINSEQ_SH} ${p} ${OUT_FQ_DIR}" \
+      >> "${TMP_QUEUE_SH}"
   done
-  < "${TMP_QUEUE_PRINSEQ_SH}" xargs -L 1 -P "${THREAD}" -t bash
-  rm -f "${TMP_QUEUE_PRINSEQ_SH}"
 fi
 
 
@@ -202,11 +203,19 @@ if [[ -d "${OUT_REF_DIR}" ]]; then
 else
   echo ">>> Prepare references with RSEM/STAR: ${OUT_REF_PREFIX}"
   mkdir "${OUT_REF_DIR}"
-  ${LOGGER_SH} \
-    "${OUT_LOG_DIR}/rsem.star.ref.${REF_TAG}.log.txt" \
-    "${RSEM_REF_SH} ${REF_GTF_GZ} ${REF_FNA_GZ} ${OUT_REF_PREFIX} ${THREAD}"
+  [[ ${ONLY_REF_PREP} -eq 0 ]] && ref_thread=1 || ref_thread="${THREAD}"
+  ref_log_txt="${OUT_LOG_DIR}/rsem.star.ref.${REF_TAG}.log.txt"
+  echo \
+    "${LOGGER_SH} ${ref_log_txt} ${RSEM_REF_SH} ${REF_GTF_GZ} ${REF_FNA_GZ} ${OUT_REF_PREFIX} ${ref_thread}" \
+    >> "${TMP_QUEUE_SH}"
 fi
-[[ ${ONLY_REF_PREP} -eq 0 ]] || exit
+
+
+# Execute the queues
+< "${TMP_QUEUE_SH}" xargs -L 1 -P "${THREAD}" -t bash
+rm -f "${TMP_QUEUE_SH}"
+[[ ${ONLY_REF_PREP} -ne 0 ]] && exit
+echo -n > "${TMP_QUEUE_SH}"
 
 
 # Read mapping and TPM calculation
@@ -215,7 +224,13 @@ echo ">>> Mapping and TPM calculation with RSEM/STAR: ${OUT_FQ_DIR} => ${OUT_MAP
 for p in ${FQ_PREFIXES}; do
   fq_name=$(basename "${p}")
   fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
-  ${LOGGER_SH} \
-    "${OUT_LOG_DIR}/rsem.star.tpm.${fq_name}.log.txt" \
-    "${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} ${SEED} ${THREAD}"
+  map_log_txt="${OUT_LOG_DIR}/rsem.star.tpm.${fq_name}.log.txt"
+  echo \
+    "${LOGGER_SH} ${map_log_txt} ${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} 1 ${SEED}" \
+    >> "${TMP_QUEUE_SH}"
 done
+
+
+# Execute the queues
+< "${TMP_QUEUE_SH}" xargs -L 1 -P "${THREAD}" -t bash
+rm -f "${TMP_QUEUE_SH}"
