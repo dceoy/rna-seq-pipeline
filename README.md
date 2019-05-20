@@ -75,7 +75,8 @@ Example: Human RNA-seq
         --ref-gtf=/path/to/<ref>.gtf.gz \
         --ref-fna=/path/to/<ref>.fna.gz \
         --in-dir=input/fq \
-        --out-dir=output
+        --out-dir=output \
+        --seed=0
     ```
 
     Run `docker-compose run --rm rna-seq-pipeline --help` for more details of options.

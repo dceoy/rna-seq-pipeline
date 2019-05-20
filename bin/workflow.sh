@@ -15,7 +15,8 @@
 #   --out-dir=<path>  Path to output directory [default: .]
 #   --qc              Execute QC checks
 #   --only-ref-prep   Prepare only references
-#   --thread=<url>    Limit CPUs for multiprocessing
+#   --thread=<int>    Limit CPUs for multiprocessing
+#   --seed=<int>      Set a random seed [default: 0]
 #   -h, --help        Print usage
 #   --version         Print version
 
@@ -44,6 +45,7 @@ IN_DIR="${PWD}"
 OUT_DIR="${PWD}"
 QC=0
 ONLY_REF_PREP=0
+SEED=0
 THREAD=1
 
 function print_version {
@@ -107,6 +109,12 @@ while [[ ${#} -ge 1 ]]; do
       ;;
     '--only-ref-prep' )
       ONLY_REF_PREP=1 && shift 1
+      ;;
+    '--seed' )
+      SEED="${2}" && shift 2
+      ;;
+    --seed=* )
+      SEED="${1#*\=}" && shift 1
       ;;
     '--thread' )
       THREAD="${2}" && shift 2
@@ -209,5 +217,5 @@ for p in ${FQ_PREFIXES}; do
   fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
   ${LOGGER_SH} \
     "${OUT_LOG_DIR}/rsem.star.tpm.${fq_name}.log.txt" \
-    "${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} ${THREAD}"
+    "${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} ${SEED} ${THREAD}"
 done
