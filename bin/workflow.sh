@@ -210,15 +210,13 @@ else
     >> "${TMP_QUEUE_SH}"
 fi
 
-
-# Execute the queues
 < "${TMP_QUEUE_SH}" xargs -L 1 -P "${THREAD}" -t bash
 rm -f "${TMP_QUEUE_SH}"
 [[ ${ONLY_REF_PREP} -ne 0 ]] && exit
-echo -n > "${TMP_QUEUE_SH}"
 
 
 # Read mapping and TPM calculation
+echo -n > "${TMP_QUEUE_SH}"
 [[ -d "${OUT_MAP_DIR}" ]] || mkdir "${OUT_MAP_DIR}"
 echo ">>> Mapping and TPM calculation with RSEM/STAR: ${OUT_FQ_DIR} => ${OUT_MAP_DIR}"
 for p in ${FQ_PREFIXES}; do
@@ -226,11 +224,9 @@ for p in ${FQ_PREFIXES}; do
   fq_prefix="${OUT_FQ_DIR}/${fq_name}.prinseq_good"
   map_log_txt="${OUT_LOG_DIR}/rsem.star.tpm.${fq_name}.log.txt"
   echo \
-    "${LOGGER_SH} ${map_log_txt} ${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} 1 ${SEED}" \
+    "${LOGGER_SH} ${map_log_txt} ${RSEM_TPM_SH} ${fq_prefix} ${OUT_REF_PREFIX} ${OUT_MAP_DIR} ${THREAD} ${SEED}" \
     >> "${TMP_QUEUE_SH}"
 done
 
-
-# Execute the queues
-< "${TMP_QUEUE_SH}" xargs -L 1 -P "${THREAD}" -t bash
+< "${TMP_QUEUE_SH}" xargs -L 1 -t bash
 rm -f "${TMP_QUEUE_SH}"
