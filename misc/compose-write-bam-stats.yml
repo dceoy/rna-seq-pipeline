@@ -1,0 +1,19 @@
+---
+version: '3'
+
+services:
+  samtools:
+    container_name: samtools
+    image: dceoy/samtools:latest
+    user: ${UID}:${GID}
+    userns_mode: host
+    volumes:
+      - .:/opt/bin
+      - ../output/map:/map:ro
+      - ../output/qc:/qc
+    working_dir: /qc
+    entrypoint:
+      - /opt/bin/write_bam_stats.sh
+    command:
+      - /map
+      - /qc
